@@ -1,5 +1,6 @@
 import Messages from "../../../db/models/message.model.js";
 import User from "../../../db/models/user.model.js";
+import * as dbMethods from '../../../db/dbMethods.js' 
 
 export const createMessage = async(req,res)=>{
     const {content} = req.body
@@ -9,12 +10,12 @@ export const createMessage = async(req,res)=>{
         return res.status(400).json({message:'All fields are required'})
     }
 
-    const isUserFound = await User.findById(sendTo)
+    const isUserFound = await dbMethods.findOneMethod(Messages, {sendTo:sendTo})
     if(!isUserFound){
-        return res.status(400).json({message:'This user is not found'})
+        return res.status(404).json({message:'This user is not found'})
     }
 
-    const send = await Messages.create({content , sendTo})
+    const send = await dbMethods.createMethod(Messages , {content , sendTo})
     if(!send){
         return res.status(400).json({message:'created failed'})
     }
@@ -25,7 +26,7 @@ export const createMessage = async(req,res)=>{
 export const deleteMessage = async(req,res)=>{
     const {loggedInUSerId , messageId} = req.query
 
-    const message = await Messages.findOneAndDelete({_id:messageId , sendTo:loggedInUSerId})
+    const message = await dbMethods.deleteMethod(Messages , {_id:messageId , sendTo:loggedInUSerId})
     if(!message){
         return res.status(400).json({message:'deletion failed'})
     }
@@ -33,13 +34,13 @@ export const deleteMessage = async(req,res)=>{
     res.status(200).json({message:'Message deleted successfully'})
 }
 
-export const markMessageAsRead = async(req,res)=>{
+export const markMessageAsRead = async(req,res,next)=>{  
     const {loggedInUserId , messageId } = req.query
 
-    const message = await Messages.findOneAndUpdate(
+    const message = await dbMethods.findOneAndUpdateMethod(
+        Messages,
         {_id:messageId , sendTo:loggedInUserId , isViewed:false},
-        {isViewed:true , $inc:{__v: 1}},
-        {new:true}
+        {isViewed:true , $inc:{__v: 1}}
     )
 
     if(!message){
@@ -52,7 +53,7 @@ export const markMessageAsRead = async(req,res)=>{
 export const listUserMessages = async(req,res)=>{
     const {isViewed, loggedInUSerId} = req.query
 
-    const messages = await Messages.find({sendTo: loggedInUSerId , isViewed}).sort({createdAt: -1})
+    const messages = await dbMethods.listUserMessagesMethod(Messages,{sendTo: loggedInUSerId , isViewed})
 
     if(!messages.length){
         return res.status(404).json({message:'No messages yet'})

@@ -1,11 +1,12 @@
 import { Router } from "express";
 import * as messageController from './message.controller.js'
-import asyncHandler from 'express-async-handler'
+import asyncWrapper from '../../../utils/asyncWrapper.js'
+
 
 const router = Router()
 
-router.post('/:sendTo' , asyncHandler(messageController.createMessage))
-router.delete('/' , asyncHandler(messageController.deleteMessage))
-router.put('/' , asyncHandler(messageController.markMessageAsRead))
-router.get('/' , asyncHandler(messageController.listUserMessages))
+router.post('/:sendTo' , asyncWrapper(messageController.createMessage))
+router.delete('/' , asyncWrapper(messageController.deleteMessage))
+router.put('/' , asyncWrapper(messageController.markMessageAsRead))
+router.get('/' , asyncWrapper(messageController.listUserMessages))
 export default router

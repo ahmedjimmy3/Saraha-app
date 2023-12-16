@@ -1,24 +1,25 @@
 import bcrypt from 'bcryptjs'
 import User from '../../../db/models/user.model.js'
+import * as dbMethods from '../../../db/dbMethods.js'
 
 export const signup = async(req,res)=>{
     const {username,email,password} = req.body
 
-    const isUserNameDuplicate = await User.findOne({username})
+    const isUserNameDuplicate = await dbMethods.findOneMethod(User,{username:username})
     if(isUserNameDuplicate){
-        return res.status(403).json({message:'Username already exist'})
+        return res.status(409).json({message:'Username already exist'})
     }
 
-    const isEmailDuplicate = await User.findOne({email})
+    const isEmailDuplicate = await dbMethods.findOneMethod(User,{email:email})
     if(isEmailDuplicate){
-        return res.status(403).json({message:'Email already exist'})
+        return res.status(409).json({message:'Email already exist'})
     }
 
-    const hashedPassword = bcrypt.hashSync(password, +process.env.SAULT_ROUNDS)
+    const hashedPassword = dbMethods.hashPassword(password)
 
-    const createdUser = await User.create({username,email,password:hashedPassword})
+    const createdUser = await dbMethods.createMethod(User,{username,email,password:hashedPassword})
     if(!createdUser){
-        return res.status(400).json({message:'Created failed'})
+        return res.status(406).json({message:'Created failed'})
     }
 
     res.status(201).json({message:'User created', createdUser})
@@ -27,12 +28,12 @@ export const signup = async(req,res)=>{
 export const signIn = async(req,res)=>{
     const {username,email,password} = req.body
 
-    const user = await User.findOne({$or:[{username} , {email}]})
+    const user = await dbMethods.findOneMethod(User,{$or:[{username:username} , {email:email}]})
     if(!user){
         return res.status(404).json({message:'Invalid credentials'})
     }
 
-    const checkPassword = bcrypt.compareSync(password, user.password)
+    const checkPassword = dbMethods.comparePasswordMethod(password , user.password)
     if(!checkPassword){
         return res.status(404).json({message:'Invalid credentials'})
     }
@@ -49,20 +50,20 @@ export const updateUser = async(req,res)=>{
     }
 
     if(username){
-        const isUserNameFound = await User.findOne({username})
+        const isUserNameFound = await dbMethods.findOneMethod(User,{username:username})
         if(isUserNameFound){
-            return res.status(401).json({message:'username used before'})
+            return res.status(409).json({message:'username used before'})
         }
     }
 
     if(email){
-        const isEmailFound = await User.findOne({email})
+        const isEmailFound = await dbMethods.findOneMethod(User,{email:email})
         if(isEmailFound){
-            return res.status(401).json({message:'email used before'})
+            return res.status(409).json({message:'email used before'})
         }
     }
 
-    const update = await User.findByIdAndUpdate(_id , {$set:{username,email}} , {new:true})
+    const update = await dbMethods.updateMethod(User , _id , {username,email})
     if(!update){
         return res.status(400).json({message:'Update Failed'})
     }
@@ -77,7 +78,7 @@ export const deleteUser = async(req,res)=>{
         return res.status(401).json({message:'You are not authorized'})
     }
 
-    const user = await User.findByIdAndDelete(_id)
+    const user = await dbMethods.deleteMethod(User , _id)
     if(!user){
         return res.status(400).json({message:'Delete Failed'})
     }
