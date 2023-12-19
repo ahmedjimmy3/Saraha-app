@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs'
-import { model } from 'mongoose'
 
 export const findOneMethod = async(modelType , query)=>{
     const data = await modelType.findOne(query)
