@@ -20,9 +20,7 @@ const userSchema = new Schema(
             type:Boolean,
             default:true
         },
-        profilePic:{
-            type:String
-        }
+        profilePic:{secure_url:String , public_id:String}
     },
     {timestamps:true}
 )

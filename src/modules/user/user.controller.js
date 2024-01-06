@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import User from '../../../db/models/user.model.js'
 import * as dbMethods from '../../../db/dbMethods.js'
+import cloudinary from '../../../utils/cloud.js'
 
 export const signup = async(req,res)=>{
     const {username,email,password} = req.body
@@ -95,4 +96,21 @@ export const getUser = async(req,res)=>{
     }
 
     res.status(200).json({user})
+}
+
+export const uploadImage = async(req,res)=>{
+    const id = req.query._id
+    const {public_id , secure_url} = await cloudinary.uploader.upload(req.file.path , {folder:`users/${id}/profilePic`})
+
+    await User.findByIdAndUpdate(id , {profilePic: {secure_url , public_id}})
+    res.status(200).json({message:'Success'})
+}
+
+export const updateImage = async(req,res)=>{
+    const id = req.query._id
+    const user = await User.findById(id)
+    const {public_id , secure_url} = await cloudinary.uploader.upload(req.file.path,{public_id:user.profilePic.public_id})
+    user.profilePic = {public_id , secure_url}
+    await user.save()
+    res.status(200).json({message:'success'})
 }
