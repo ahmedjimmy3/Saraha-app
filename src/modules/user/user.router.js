@@ -11,6 +11,7 @@ router.put('/' , asyncWrapper(userController.updateUser))
 router.delete('/' , asyncWrapper(userController.deleteUser))
 router.get('/:_id' , asyncWrapper(userController.getUser))
 // ====================================cloudinary=================
-router.post('/upload' , uploadFileCloud().single('pp') ,asyncWrapper(userController.uploadImage))
+router.post('/upload' , uploadFileCloud().array('pp') ,asyncWrapper(userController.uploadImage))
+router.delete('/deleteImages/:folderId' ,asyncWrapper(userController.deleteFolderImages))
 router.patch('/update_profilePic' , uploadFileCloud().single('pp') ,asyncWrapper(userController.updateImage))
 export default router

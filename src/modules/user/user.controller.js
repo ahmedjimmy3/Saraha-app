@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import User from '../../../db/models/user.model.js'
 import * as dbMethods from '../../../db/dbMethods.js'
 import cloudinary from '../../../utils/cloud.js'
+import generateUniqueString from '../../../utils/generateUniqueString.js'
 
 export const signup = async(req,res)=>{
     const {username,email,password} = req.body
@@ -100,10 +101,37 @@ export const getUser = async(req,res)=>{
 
 export const uploadImage = async(req,res)=>{
     const id = req.query._id
-    const {public_id , secure_url} = await cloudinary.uploader.upload(req.file.path , {folder:`users/${id}/profilePic`})
-
-    await User.findByIdAndUpdate(id , {profilePic: {secure_url , public_id}})
+    const folderId = generateUniqueString()
+    let images = []
+    for (const file of req.files) {
+        const {public_id , secure_url} = await cloudinary.uploader.upload(file.path , {
+            folder:`users/${id}/${folderId}`,
+            use_filename:true,
+            unique_filename:false
+        })
+        images.push({public_id , secure_url,folderId})
+    }
+    await User.findByIdAndUpdate(id , {profilePic: images})
     res.status(200).json({message:'Success'})
+}
+
+export const deleteFolderImages = async(req,res)=>{
+    const {folderId} = req.params
+    const {id} = req.query
+    let arrFolderId = []
+    let arrPublicId = []
+    const folderPath = `users/${id}/${folderId}`
+    arrFolderId.push(folderPath)
+    const user = await User.findById(id)
+    const images = user.profilePic
+    images.forEach(img => {
+        arrPublicId.push(img['public_id'])
+    });
+    await cloudinary.api.delete_resources(arrPublicId)
+    await cloudinary.api.delete_folder(arrFolderId)
+    user.profilePic = undefined
+    await user.save()
+    res.status(200).json({message:'Deleted done successfully'})
 }
 
 export const updateImage = async(req,res)=>{
